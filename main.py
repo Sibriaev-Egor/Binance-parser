@@ -21,13 +21,9 @@ def settings():
             "profession"
         ]
     }
-    try:
-        with open('settings.json') as file:
-            mySettings = json.load(file)
-            myobj.update(mySettings)
-    except FileNotFoundError as err:
-        logging.error(err)
-        exit()
+    with open('settings.json') as file:
+        mySettings = json.load(file)
+        myobj.update(mySettings)
 
     return url, myobj
 
@@ -72,12 +68,9 @@ def printAll(asset, response):
 def requestFunction(url, setJSON, page):
     setJSON = setJSON.copy()
     setJSON["page"] = page
-    try:
-        response = requests.post(url, json=setJSON)
-        return response.json()["data"]
-    except Exception as err:
-        logging.error(err)
-        return []
+
+    response = requests.post(url, json=setJSON)
+    return response.json()["data"]
 
 def getPages(asset, setJSON, url):
     setJSON = setJSON.copy()
@@ -86,15 +79,11 @@ def getPages(asset, setJSON, url):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         pagesAray = []
         for i in range(5):
-            try:
-                pagesAray.append(executor.submit(requestFunction, url, setJSON, i+1))
-            except NotImplementedError as err:
-                print(err)
+            pagesAray.append(executor.submit(requestFunction, url, setJSON, i+1))
+
         for response in concurrent.futures.as_completed(pagesAray):
-            try:
-                resArray.append(response.result())
-            except Exception as err:
-                print('Unable to get the result')
+            resArray.append(response.result())
+
     return asset, resArray
 
 def main():
@@ -104,16 +93,10 @@ def main():
     with concurrent.futures.ThreadPoolExecutor() as executor:
         assetArray = []
         for i in setJSON["asset"]:
-            try:
-                assetArray.append(executor.submit(getPages, i, setJSON, url))
-            except NotImplementedError as err:
-                print(err)
+            assetArray.append(executor.submit(getPages, i, setJSON, url))
 
         for response in concurrent.futures.as_completed(assetArray):
-            try:
-                asset, res = response.result()
-                printAll(asset, res)
-            except Exception as err:
-                print('Unable to get the result')
+            asset, res = response.result()
+            printAll(asset, res)
 
 main()

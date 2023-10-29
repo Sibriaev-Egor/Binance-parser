@@ -1,5 +1,5 @@
 {
-  "fiat": "CNY",
+  "fiat": "UAH",
   "tradeType": "BUY",
   "transAmount": null,
   "asset": ["USDT", "BTC", "FDUSD"],

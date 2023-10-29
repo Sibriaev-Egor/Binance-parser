@@ -21,6 +21,10 @@ def settings():
         ]
     }
 
+    with open('settings.json') as file:
+        mySettings = json.load(file)
+        myobj.update(mySettings)
+
     return url, myobj
 
 def logmaker():

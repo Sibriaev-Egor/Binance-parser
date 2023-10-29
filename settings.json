@@ -2,6 +2,6 @@
   "fiat": "CNY",
   "tradeType": "BUY",
   "transAmount": null,
-  "asset": "BTC",
+  "asset": ["USDT", "BTC", "FDUSD"],
   "publisherType": "merchant"
 }

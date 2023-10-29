@@ -1,6 +1,7 @@
 import logging
 import requests
 import json
+import concurrent.futures
 
 def settings():
     url = 'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search'
@@ -20,10 +21,13 @@ def settings():
             "profession"
         ]
     }
-
-    with open('settings.json') as file:
-        mySettings = json.load(file)
-        myobj.update(mySettings)
+    try:
+        with open('settings.json') as file:
+            mySettings = json.load(file)
+            myobj.update(mySettings)
+    except FileNotFoundError as err:
+        logging.error(err)
+        exit()
 
     return url, myobj
 
@@ -68,16 +72,48 @@ def printAll(asset, response):
 def requestFunction(url, setJSON, page):
     setJSON = setJSON.copy()
     setJSON["page"] = page
-    response = requests.post(url, json=setJSON)
-    return response.json()["data"]
+    try:
+        response = requests.post(url, json=setJSON)
+        return response.json()["data"]
+    except Exception as err:
+        logging.error(err)
+        return []
+
+def getPages(asset, setJSON, url):
+    setJSON = setJSON.copy()
+    setJSON["asset"] = asset
+    resArray = []
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        pagesAray = []
+        for i in range(5):
+            try:
+                pagesAray.append(executor.submit(requestFunction, url, setJSON, i+1))
+            except NotImplementedError as err:
+                print(err)
+        for response in concurrent.futures.as_completed(pagesAray):
+            try:
+                resArray.append(response.result())
+            except Exception as err:
+                print('Unable to get the result')
+    return asset, resArray
 
 def main():
     logmaker()
     url, setJSON = settings()
 
-    arr = []
-    for i in range(1, 6):
-        arr.append(requestFunction(url, setJSON, i))
-    printAll(setJSON["asset"], arr)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        assetArray = []
+        for i in setJSON["asset"]:
+            try:
+                assetArray.append(executor.submit(getPages, i, setJSON, url))
+            except NotImplementedError as err:
+                print(err)
+
+        for response in concurrent.futures.as_completed(assetArray):
+            try:
+                asset, res = response.result()
+                printAll(asset, res)
+            except Exception as err:
+                print('Unable to get the result')
 
 main()
